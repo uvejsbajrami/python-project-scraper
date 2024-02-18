@@ -14,19 +14,25 @@ def scrapeURL():
     if response.status_code == 200:
         html_content = response.text
 
-        scraped_data = []
+        scraped_data = {}
 
         soup = BeautifulSoup(html_content, 'html.parser')
 
+        text_data = []
+        img_data = []
+
         for selector in selectors:
+            elements = soup.select(selector)
             if "img" in selector:
-                img_elements = soup.select(selector)
-                img_srcs = [img['src'] for img in img_elements]
-                data = [{'selector': selector, 'src': src} for src in img_srcs]
+                img_data.extend([element['src'] for element in elements])
             else:
-                elements = soup.select(selector)
-                data = [{'selector': selector, 'text': element.get_text().strip()} for element in elements]
-            scraped_data.extend(data)
+                text_data.extend([element.get_text().strip() for element in elements])
+
+        for i, text in enumerate(text_data):
+            scraped_data[f'text{i+1}'] = text
+
+        for i, img_src in enumerate(img_data):
+            scraped_data[f'image{i+1}'] = img_src
 
         try:
             with open('scraped_data.json', 'r') as f:
@@ -34,7 +40,7 @@ def scrapeURL():
         except FileNotFoundError:
             existing_data = []
 
-        existing_data.extend(scraped_data)
+        existing_data.append(scraped_data)
 
         with open('scraped_data.json', 'w') as f:
             json.dump(existing_data, f, indent=4)
